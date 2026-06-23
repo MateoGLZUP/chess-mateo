@@ -123,6 +123,18 @@ export class PuzzleSession {
     return { kind: "continue", opponentUci: this.puzzle.moves[this.idx] };
   }
 
+  /** FEN resultante tras una jugada (sin alterar la sesion). Para clasificar. */
+  fenAfter(from: string, to: string): string | null {
+    try {
+      const clone = new Chess(this.chess.fen());
+      const promo = this.promotionFor(from, to);
+      clone.move({ from, to, promotion: (promo || "q") as any });
+      return clone.fen();
+    } catch {
+      return null;
+    }
+  }
+
   /** Aplica una jugada de la solucion (respuesta rival o al revelar). */
   force(uci: string): void {
     const p = parseUci(uci);

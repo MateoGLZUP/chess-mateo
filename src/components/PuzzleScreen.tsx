@@ -7,6 +7,7 @@ import { prettyThemes, themeTip } from "../lib/themes";
 import { play, haptic } from "../lib/sound";
 import { analyze, stopAnalysis, evalText, whiteWinProb, uciLineToSan, engineSupported, type Analysis } from "../lib/engine";
 import { explainBestMove, explainSolution, coachNudge, type CoachLine } from "../lib/coach";
+import { CLASS_INFO, isSacrifice, classifyWrong, moreSevere, type MoveClass } from "../lib/classify";
 
 export interface ResultInfo {
   delta: number;
@@ -42,10 +43,36 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
   const [analyzing, setAnalyzing] = useState(false);
   const [terminal, setTerminal] = useState<{ label: string; prob: number } | null>(null);
   const [coach, setCoach] = useState<CoachLine | null>(null);
+  const [badge, setBadge] = useState<MoveClass | null>(null);
+  const [coachClass, setCoachClass] = useState<MoveClass | null>(null);
 
   const failedRef = useRef(false);
   const resultDoneRef = useRef(false);
   const aliveRef = useRef(true);
+  const worstWrongRef = useRef<MoveClass | null>(null);
+  const classifyingRef = useRef(false);
+  const movesPlayedRef = useRef(0);
+  const badgeTimer = useRef<number | undefined>(undefined);
+
+  function showBadge(cls: MoveClass) {
+    setBadge(cls);
+    window.clearTimeout(badgeTimer.current);
+    badgeTimer.current = window.setTimeout(() => {
+      if (aliveRef.current) setBadge(null);
+    }, 1300);
+  }
+
+  function correctClass(): MoveClass {
+    if (hintLevel > 0) return "good";
+    if (movesPlayedRef.current === 0 && isSacrifice(puzzle.themes)) return "brilliant";
+    return "best";
+  }
+
+  function summaryClass(): MoveClass {
+    if (failedRef.current) return worstWrongRef.current ?? "mistake";
+    if (hintLevel >= 1) return "good";
+    return isSacrifice(puzzle.themes) ? "brilliant" : "best";
+  }
 
   useEffect(() => {
     aliveRef.current = true;
@@ -117,6 +144,7 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
   function onUserMove(from: string, to: string) {
     if (locked || done) return;
     setCoach(null);
+    setCoachClass(null);
     const r = session.tryMove(from, to);
 
     if (r.kind === "wrong") {
@@ -127,6 +155,21 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
       // El coach explica la mejor jugada y qué produce (en TODOS los modos).
       const line = explainBestMove(session.fen, session.remainingMoves(), puzzle.themes);
       setCoach(line);
+      // Clasifica la gravedad del error con el motor (no en Rush).
+      if (!isRush && !classifyingRef.current) {
+        const fenAfter = session.fenAfter(from, to);
+        if (fenAfter) {
+          classifyingRef.current = true;
+          classifyWrong(fenAfter, session.playerColor).then((cls) => {
+            classifyingRef.current = false;
+            worstWrongRef.current = moreSevere(worstWrongRef.current, cls);
+            if (aliveRef.current) {
+              setCoachClass(cls);
+              showBadge(cls);
+            }
+          });
+        }
+      }
       bump();
       if (isRush) {
         setLocked(true);
@@ -145,6 +188,8 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
       play(isRush ? "correct" : "win", settings);
       haptic(settings, 18);
       setFlash("right");
+      showBadge(correctClass());
+      movesPlayedRef.current++;
       bump();
       window.setTimeout(() => {
         if (!aliveRef.current) return;
@@ -158,6 +203,8 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
     // correcto pero el puzzle sigue: responde el rival
     play("correct", settings);
     setFlash("right");
+    showBadge(correctClass());
+    movesPlayedRef.current++;
     setLocked(true);
     bump();
     window.setTimeout(() => {
@@ -221,6 +268,11 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
       {nudge && <div className="coach-nudge">🧑‍🏫 {nudge}</div>}
 
       <div className={`board-shell ${flash ?? ""}`}>
+        {badge && (
+          <div className={`move-badge ${CLASS_INFO[badge].cls}`}>
+            {CLASS_INFO[badge].icon} {CLASS_INFO[badge].label}
+          </div>
+        )}
         <Board
           fen={session.fen}
           orientation={session.playerColor}
@@ -251,7 +303,14 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
 
       {!done && coach && (
         <div className="coach-banner">
-          <div className="coach-banner-head">🧑‍🏫 Coach</div>
+          <div className="coach-banner-head">
+            🧑‍🏫 Coach
+            {coachClass && (
+              <span className={`cl-pill ${CLASS_INFO[coachClass].cls}`}>
+                {CLASS_INFO[coachClass].icon} {CLASS_INFO[coachClass].label}
+              </span>
+            )}
+          </div>
           <div className="coach-banner-text">
             La mejor era <b>{coach.bestSan}</b> (flecha azul). {coach.outcome}
             {coach.tip ? ` ${coach.tip}` : ""}
@@ -262,6 +321,9 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
       {done && summary && (
         <div className={`summary ${summary.clean ? "good" : "bad"}`}>
           <div className="summary-title">{summary.clean ? "✅ ¡Resuelto!" : "📖 Aquí estaba la solución"}</div>
+          <div className={`summary-class ${CLASS_INFO[summaryClass()].cls}`}>
+            {CLASS_INFO[summaryClass()].icon} {CLASS_INFO[summaryClass()].label}
+          </div>
           {summary.rankUp && <div className="rankup-note">🎉 ¡Subiste de rango!</div>}
           <div className="rating-line">
             Rating <b>{summary.newRating}</b>{" "}

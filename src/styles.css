@@ -420,8 +420,76 @@ body {
 .mode-card.coach .mc-text small {
   color: #160b2acc;
 }
+
+/* ---------- clasificación de jugadas (estilo chess.com) ---------- */
+.move-badge {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 4px 14px #0007;
+  animation: badgePop 0.25s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+@keyframes badgePop {
+  from {
+    transform: translateX(-50%) scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+.cl-pill {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+.summary-class {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+.cl-brilliant {
+  background: #18b0c4;
+  color: #04252a;
+}
+.cl-best {
+  background: var(--green);
+  color: #07260c;
+}
+.cl-good {
+  background: var(--accent);
+  color: #0e1020;
+}
+.cl-inacc {
+  background: var(--gold);
+  color: #2a2200;
+}
+.cl-mistake {
+  background: #f0934a;
+  color: #2a1400;
+}
+.cl-blunder {
+  background: var(--red);
+  color: #2a0a10;
+}
 .board-shell {
   /* tablero de borde a borde (full-bleed), como chess.com */
+  position: relative;
   overflow: hidden;
   margin: 0 -11px;
   transition: box-shadow 0.18s;
