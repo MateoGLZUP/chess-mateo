@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { Chess } from "chess.js";
 import Board from "./Board";
 import { PuzzleSession } from "../lib/session";
 import type { Puzzle, Settings } from "../lib/types";
 import { prettyThemes, themeTip } from "../lib/themes";
 import { play, haptic } from "../lib/sound";
+import { analyze, stopAnalysis, evalText, whiteWinProb, uciLineToSan, engineSupported, type Analysis } from "../lib/engine";
 
 export interface ResultInfo {
   delta: number;
@@ -34,6 +36,9 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
   const [hintLevel, setHintLevel] = useState(0);
   const [done, setDone] = useState(false);
   const [summary, setSummary] = useState<(ResultInfo & { clean: boolean }) | null>(null);
+  const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [terminal, setTerminal] = useState<{ label: string; prob: number } | null>(null);
 
   const failedRef = useRef(false);
   const resultDoneRef = useRef(false);
@@ -52,6 +57,46 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
       (window as any).__cmPuzzle = puzzle;
     }
   }, [puzzle]);
+
+  // Análisis del motor al terminar el puzzle (no en Rush).
+  useEffect(() => {
+    if (!done || variant === "rush" || !engineSupported()) return;
+    let cancelled = false;
+    const fen = session.fen;
+
+    // Posición terminal: no hace falta el motor.
+    const c = new Chess(fen);
+    if (c.isGameOver()) {
+      if (c.isCheckmate()) {
+        const whiteMated = c.turn() === "w";
+        setTerminal({ label: "Jaque mate", prob: whiteMated ? 0 : 1 });
+      } else {
+        setTerminal({ label: "Tablas", prob: 0.5 });
+      }
+      setAnalysis(null);
+      setAnalyzing(false);
+      return;
+    }
+
+    setTerminal(null);
+    setAnalysis(null);
+    setAnalyzing(true);
+    analyze(fen, { movetime: 900 })
+      .then((a) => {
+        if (!cancelled) {
+          setAnalysis(a);
+          setAnalyzing(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAnalyzing(false);
+      });
+    return () => {
+      cancelled = true;
+      stopAnalysis();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done]);
 
   const session = sessionRef.current;
   const isRush = variant === "rush";
@@ -209,6 +254,40 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
             ))}
           </div>
           {tip && <div className="tip">💡 {tip}</div>}
+
+          {(analyzing || analysis || terminal) && (
+            <div className="engine">
+              <div className="engine-head">
+                <span className="engine-title">🔍 Motor (Stockfish)</span>
+                {analyzing ? (
+                  <span className="engine-eval analyzing">Analizando…</span>
+                ) : terminal ? (
+                  <span className={"engine-eval " + (terminal.prob >= 0.5 ? "ev-w" : "ev-b")}>{terminal.label}</span>
+                ) : analysis ? (
+                  <span className={"engine-eval " + (whiteWinProb(analysis) >= 0.5 ? "ev-w" : "ev-b")}>
+                    {evalText(analysis)}
+                  </span>
+                ) : null}
+              </div>
+              {(analysis || terminal) && (
+                <>
+                  <div className="evalbar">
+                    <div
+                      className="evalbar-white"
+                      style={{
+                        width: `${Math.round((terminal ? terminal.prob : whiteWinProb(analysis!)) * 100)}%`
+                      }}
+                    />
+                  </div>
+                  {analysis && analysis.pv.length > 0 && (
+                    <div className="engine-line">Mejor línea: {uciLineToSan(session.fen, analysis.pv, 8)}</div>
+                  )}
+                  {terminal && <div className="engine-line">Fin de la partida.</div>}
+                </>
+              )}
+            </div>
+          )}
+
           <a className="gamelink" href={`https://lichess.org/training/${puzzle.id}`} target="_blank" rel="noreferrer">
             Ver análisis en Lichess ↗
           </a>

@@ -12,7 +12,7 @@ export default defineConfig(({ command }) => ({
       registerType: "autoUpdate",
       includeAssets: ["icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png"],
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico,json,woff,woff2}"],
+        globPatterns: ["**/*.{js,css,html,svg,png,ico,json,woff,woff2,wasm}"],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
       manifest: {

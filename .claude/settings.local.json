@@ -36,7 +36,12 @@
       "Bash(curl --retry 30 --retry-delay 1 --retry-connrefused -s -o /dev/null -w \"dev / -> %{http_code}\\\\n\" http://localhost:5173/)",
       "Bash(git add *)",
       "Bash(git -c user.name=\"MateoGLZUP\" -c user.email=\"mateocuentanumero2@gmail.com\" commit -q -F -)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(echo \"Version: $\\(node -e \"console.log\\(require\\('./node_modules/stockfish/package.json'\\).version\\)\" \\)\")",
+      "Bash(curl --retry 30 --retry-delay 1 --retry-connrefused -s -o /dev/null -w \"dev -> %{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"stockfish.js   -> %{http_code}\\\\n\" http://localhost:5173/engine/stockfish.js)",
+      "Bash(curl -s -o /dev/null -w \"stockfish.wasm -> %{http_code}\\\\n\" http://localhost:5173/engine/stockfish.wasm)",
+      "Bash(python3 -)"
     ]
   }
 }
