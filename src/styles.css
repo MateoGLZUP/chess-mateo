@@ -487,6 +487,102 @@ body {
   background: var(--red);
   color: #2a0a10;
 }
+
+/* ---------- jugar vs máquina + análisis ---------- */
+.play,
+.analysis {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.setup-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.setup-label {
+  font-weight: 700;
+  font-size: 15px;
+  margin-top: 6px;
+}
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.level-card {
+  background: var(--panel);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+.level-card.active {
+  border-color: var(--accent);
+}
+.level-card b {
+  font-size: 15px;
+}
+.level-card small {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.color-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.play-status {
+  text-align: center;
+  margin: 12px 4px;
+  font-size: 16px;
+  color: var(--muted);
+  min-height: 24px;
+  font-weight: 600;
+}
+.play-status.over {
+  color: var(--text);
+  font-weight: 800;
+  font-size: 18px;
+}
+.engine-thinking {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.fen-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.fen-input {
+  flex: 1;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid #ffffff20;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 12px;
+  font-family: ui-monospace, Menlo, monospace;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.fen-input.err {
+  border-color: var(--red);
+}
+.mode-card.play {
+  background: linear-gradient(120deg, #2f9e6e, #42c98c);
+  color: #06231a;
+}
+.mode-card.play .mc-text small {
+  color: #06231acc;
+}
 .board-shell {
   /* tablero de borde a borde (full-bleed), como chess.com */
   position: relative;

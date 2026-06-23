@@ -5,6 +5,8 @@ import Home, { NavTarget } from "./components/Home";
 import TrainView, { TrainMode } from "./components/TrainView";
 import RushView from "./components/RushView";
 import ThemePicker from "./components/ThemePicker";
+import PlayView from "./components/PlayView";
+import AnalysisView from "./components/AnalysisView";
 import SettingsView from "./components/Settings";
 import Dashboard from "./components/Dashboard";
 import Confetti from "./components/Confetti";
@@ -26,6 +28,8 @@ type Nav =
   | { s: "rush" }
   | { s: "themes" }
   | { s: "daily" }
+  | { s: "play" }
+  | { s: "analysis" }
   | { s: "stats" }
   | { s: "settings" };
 
@@ -162,6 +166,8 @@ export default function App() {
     else if (t === "review") setNav({ s: "train", mode: "review" });
     else if (t === "daily") setNav({ s: "daily" });
     else if (t === "coach") setNav({ s: "train", mode: "coach" });
+    else if (t === "play") setNav({ s: "play" });
+    else if (t === "analysis") setNav({ s: "analysis" });
   }
 
   // --- onboarding gate ---
@@ -173,7 +179,8 @@ export default function App() {
     );
   }
 
-  const hasSubHeader = nav.s === "train" || nav.s === "rush" || nav.s === "themes" || nav.s === "daily";
+  const hasSubHeader =
+    nav.s === "train" || nav.s === "rush" || nav.s === "themes" || nav.s === "daily" || nav.s === "play" || nav.s === "analysis";
   const loading = <div className="loading">Cargando puzzles…</div>;
   const goHome = () => setNav({ s: "home" });
 
@@ -245,6 +252,10 @@ export default function App() {
     ) : (
       loading
     );
+  } else if (nav.s === "play") {
+    content = <PlayView settings={profile.settings} onHome={goHome} />;
+  } else if (nav.s === "analysis") {
+    content = <AnalysisView settings={profile.settings} onHome={goHome} />;
   } else {
     // train
     content = puzzles ? (

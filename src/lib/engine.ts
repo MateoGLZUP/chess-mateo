@@ -102,6 +102,7 @@ export async function analyze(fen: string, opts: { movetime?: number; depth?: nu
     };
 
     w.addEventListener("message", onMsg);
+    w.postMessage("setoption name Skill Level value 20"); // fuerza máxima para analizar
     w.postMessage("ucinewgame");
     w.postMessage("position fen " + fen);
     if (opts.depth) w.postMessage("go depth " + opts.depth);
@@ -111,6 +112,32 @@ export async function analyze(fen: string, opts: { movetime?: number; depth?: nu
 
 export function stopAnalysis(): void {
   if (worker && busy) worker.postMessage("stop");
+}
+
+/**
+ * Devuelve la jugada del motor a un nivel de fuerza dado (para jugar partidas).
+ * skill: 0 (débil) .. 20 (máximo). Devuelve UCI o null si no hay jugada.
+ */
+export async function bestMove(fen: string, opts: { skill?: number; movetime?: number } = {}): Promise<string | null> {
+  await initEngine();
+  const w = getWorker();
+  busy = true;
+  const skill = Math.max(0, Math.min(20, opts.skill ?? 20));
+  return new Promise<string | null>((resolve) => {
+    const onMsg = (e: MessageEvent) => {
+      const line = "" + e.data;
+      if (line.startsWith("bestmove")) {
+        w.removeEventListener("message", onMsg);
+        busy = false;
+        const bm = line.split(/\s+/)[1];
+        resolve(bm && bm !== "(none)" ? bm : null);
+      }
+    };
+    w.addEventListener("message", onMsg);
+    w.postMessage("setoption name Skill Level value " + skill);
+    w.postMessage("position fen " + fen);
+    w.postMessage("go movetime " + (opts.movetime ?? 500));
+  });
 }
 
 // ---------- helpers de presentación ----------
