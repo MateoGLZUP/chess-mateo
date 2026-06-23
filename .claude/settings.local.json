@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npm --version)",
+      "Bash(curl --version)",
+      "Bash(curl -s \"https://datasets-server.huggingface.co/rows?dataset=Lichess/chess-puzzles&config=default&split=train&offset=0&length=3\")",
+      "Bash(node *)",
+      "Bash(qlmanage -t -s 512 -o . icon.svg)",
+      "Bash(mv icon.svg.png icon-512.png)",
+      "Bash(sips -z 192 192 icon-512.png --out icon-192.png)",
+      "Bash(sips -s format png icon.svg --out icon-512.png -z 512 512)",
+      "Bash(ls -la *.png)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(echo \"preview server lanzado en background \\(pid $!\\)\")",
+      "Bash(npm i *)",
+      "Bash(npx playwright *)",
+      "Bash(echo \"preview relanzado \\(pid $!\\)\")",
+      "Bash(curl --retry 30 --retry-delay 1 --retry-connrefused -s -o /dev/null -w \"HTTP %{http_code} en %{url_effective}\\\\n\" http://localhost:4173/)"
+    ]
+  }
+}

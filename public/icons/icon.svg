@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b3b6d"/>
+      <stop offset="1" stop-color="#16161f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g fill="#ffffff" transform="translate(96,72) scale(1.0)">
+    <!-- caballo de ajedrez estilizado -->
+    <path d="M120 24c-10 0-18 6-22 14-30 14-58 44-66 92-6 34 2 58 2 58l-22 26c-6 8-2 18 8 18h8l-6 22c-2 8 4 16 12 16h156c10 0 16-10 12-20-8-22-6-44 2-74 12-44 6-86-24-122-12-14-28-26-46-30-6-16-2-28-26-28z"/>
+  </g>
+  <g fill="#16161f">
+    <circle cx="196" cy="150" r="13"/>
+  </g>
+  <text x="256" y="470" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="56" font-weight="800" fill="#ffffff" text-anchor="middle" opacity="0.92">♞</text>
+</svg>

@@ -1,0 +1,40 @@
+export interface Puzzle {
+  id: string;
+  fen: string;
+  moves: string[];
+  rating: number;
+  popularity: number;
+  themes: string[];
+  openings: string[];
+}
+
+export interface PlayerRating {
+  rating: number;
+  rd: number; // rating deviation (incertidumbre)
+  vol: number; // volatilidad
+}
+
+export interface ThemeStat {
+  solved: number;
+  failed: number;
+}
+
+export interface SrsItem {
+  id: string;
+  dueAt: number; // timestamp en ms
+  interval: number; // dias
+  fails: number;
+}
+
+export interface Profile {
+  rating: PlayerRating;
+  totalAttempts: number;
+  totalClean: number; // resueltos sin ayuda ni error
+  currentStreak: number;
+  bestStreak: number;
+  solvedIds: string[];
+  byTheme: Record<string, ThemeStat>;
+  history: { t: number; r: number }[];
+  srs: SrsItem[];
+  lastPlayed: number;
+}
