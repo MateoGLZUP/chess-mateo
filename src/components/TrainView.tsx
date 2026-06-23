@@ -2,9 +2,10 @@ import { useState } from "react";
 import type { MutableRefObject } from "react";
 import PuzzleScreen, { ResultInfo } from "./PuzzleScreen";
 import { selectNext, pickDue } from "../lib/puzzles";
+import { weakestMotif } from "../lib/coach";
 import type { Puzzle, Profile, Settings } from "../lib/types";
 
-export type TrainMode = "adaptive" | "theme" | "review" | "daily";
+export type TrainMode = "adaptive" | "theme" | "review" | "daily" | "coach";
 
 interface Props {
   puzzles: Puzzle[];
@@ -36,13 +37,19 @@ export default function TrainView({
   onDailyDone,
   onHome
 }: Props) {
+  const themeForSelect = (): string | undefined => {
+    if (mode === "theme") return theme;
+    if (mode === "coach") return weakestMotif(profileRef.current);
+    return undefined;
+  };
+
   const pickFirst = (): Current | null => {
     if (mode === "daily") return fixedPuzzle ? { puzzle: fixedPuzzle, isReview: false } : null;
     if (mode === "review") {
       const p = pickDue(profileRef.current);
       return p ? { puzzle: p, isReview: true } : null;
     }
-    const s = selectNext(puzzles, profileRef.current, mode === "theme" ? theme : undefined);
+    const s = selectNext(puzzles, profileRef.current, themeForSelect());
     return s.puzzle ? { puzzle: s.puzzle, isReview: s.isReview } : null;
   };
 
@@ -75,7 +82,7 @@ export default function TrainView({
       setSeq((s) => s + 1);
       return;
     }
-    const s = selectNext(puzzles, profileRef.current, mode === "theme" ? theme : undefined);
+    const s = selectNext(puzzles, profileRef.current, themeForSelect());
     setCurrent(s.puzzle ? { puzzle: s.puzzle, isReview: s.isReview } : null);
     setSeq((s2) => s2 + 1);
   }
@@ -116,6 +123,7 @@ export default function TrainView({
             puzzle={current.puzzle}
             settings={settings}
             isReview={current.isReview}
+            coachMode={mode === "coach"}
             nextLabel={mode === "daily" ? "Listo ✓" : "Siguiente ▶"}
             onResult={handleResult}
             onNext={handleNext}

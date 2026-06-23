@@ -9,7 +9,7 @@ interface Props {
   puzzles: Puzzle[];
   profileRef: MutableRefObject<Profile>;
   settings: Settings;
-  onFinish: (score: number) => { best: number; isRecord: boolean };
+  onFinish: (score: number, missedIds: string[]) => { best: number; isRecord: boolean };
   onHome: () => void;
 }
 
@@ -22,6 +22,7 @@ export default function RushView({ puzzles, profileRef, settings, onFinish, onHo
 
   const scoreRef = useRef(0);
   const livesRef = useRef(MAX_LIVES);
+  const missedRef = useRef<string[]>([]);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(MAX_LIVES);
   const [seq, setSeq] = useState(0);
@@ -44,7 +45,7 @@ export default function RushView({ puzzles, profileRef, settings, onFinish, onHo
 
   function end(finalScore: number) {
     play("lose", settings);
-    const res = onFinish(finalScore);
+    const res = onFinish(finalScore, missedRef.current);
     setResult({ score: finalScore, ...res });
     setFinished(true);
   }
@@ -56,6 +57,7 @@ export default function RushView({ puzzles, profileRef, settings, onFinish, onHo
       setScore(scoreRef.current);
       advance();
     } else {
+      missedRef.current.push(current.id);
       livesRef.current -= 1;
       setLives(livesRef.current);
       if (livesRef.current <= 0) end(scoreRef.current);
@@ -68,6 +70,7 @@ export default function RushView({ puzzles, profileRef, settings, onFinish, onHo
     targetRef.current = startTarget;
     scoreRef.current = 0;
     livesRef.current = MAX_LIVES;
+    missedRef.current = [];
     setScore(0);
     setLives(MAX_LIVES);
     setFinished(false);

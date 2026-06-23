@@ -6,6 +6,7 @@ import type { Puzzle, Settings } from "../lib/types";
 import { prettyThemes, themeTip } from "../lib/themes";
 import { play, haptic } from "../lib/sound";
 import { analyze, stopAnalysis, evalText, whiteWinProb, uciLineToSan, engineSupported, type Analysis } from "../lib/engine";
+import { explainBestMove, explainSolution, coachNudge, type CoachLine } from "../lib/coach";
 
 export interface ResultInfo {
   delta: number;
@@ -18,6 +19,7 @@ interface Props {
   settings: Settings;
   isReview?: boolean;
   variant?: "normal" | "rush";
+  coachMode?: boolean;
   nextLabel?: string;
   onResult?: (clean: boolean) => ResultInfo; // modo normal
   onNext?: () => void; // modo normal
@@ -26,7 +28,7 @@ interface Props {
 
 type Flash = "right" | "wrong" | null;
 
-export default function PuzzleScreen({ puzzle, settings, isReview, variant = "normal", nextLabel, onResult, onNext, onRush }: Props) {
+export default function PuzzleScreen({ puzzle, settings, isReview, variant = "normal", coachMode, nextLabel, onResult, onNext, onRush }: Props) {
   const sessionRef = useRef<PuzzleSession>(new PuzzleSession(puzzle));
   const [, setTick] = useState(0);
   const bump = () => setTick((t) => t + 1);
@@ -39,6 +41,7 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [terminal, setTerminal] = useState<{ label: string; prob: number } | null>(null);
+  const [coach, setCoach] = useState<CoachLine | null>(null);
 
   const failedRef = useRef(false);
   const resultDoneRef = useRef(false);
@@ -113,6 +116,7 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
 
   function onUserMove(from: string, to: string) {
     if (locked || done) return;
+    setCoach(null);
     const r = session.tryMove(from, to);
 
     if (r.kind === "wrong") {
@@ -120,12 +124,15 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
       play("wrong", settings);
       haptic(settings, 30);
       setFlash("wrong");
+      // El coach explica la mejor jugada y qué produce (en TODOS los modos).
+      const line = explainBestMove(session.fen, session.remainingMoves(), puzzle.themes);
+      setCoach(line);
       bump();
       if (isRush) {
         setLocked(true);
         window.setTimeout(() => {
           if (aliveRef.current) onRush?.(false);
-        }, 500);
+        }, line ? 2100 : 600);
       } else {
         window.setTimeout(() => {
           if (aliveRef.current) setFlash(null);
@@ -197,6 +204,12 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
       if (hintLevel >= 2) shapes.push({ orig: exp.from, dest: exp.to, brush: "green" });
     }
   }
+  if (coach && !done) {
+    shapes.push({ orig: coach.from, dest: coach.to, brush: "blue" });
+  }
+
+  const nudge = coachMode && !done && !coach && flash === null ? coachNudge(puzzle.themes) : null;
+  const solutionCoach = done ? explainSolution(puzzle) : null;
 
   const interactive = !locked && !done;
   const moverLabel = session.playerColor === "white" ? "blancas" : "negras";
@@ -205,6 +218,7 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
   return (
     <div className="puzzle">
       {isReview && !isRush && <div className="review-badge">🔁 Repaso — ya lo fallaste, a ver si ahora sí</div>}
+      {nudge && <div className="coach-nudge">🧑‍🏫 {nudge}</div>}
 
       <div className={`board-shell ${flash ?? ""}`}>
         <Board
@@ -223,7 +237,7 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
         />
       </div>
 
-      {!done && (
+      {!done && !coach && (
         <div className={`prompt ${flash ?? ""}`}>
           {flash === "wrong"
             ? isRush
@@ -232,6 +246,16 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
             : flash === "right"
             ? "✅ ¡Bien!"
             : `Juegan las ${moverLabel} — encuentra la mejor jugada`}
+        </div>
+      )}
+
+      {!done && coach && (
+        <div className="coach-banner">
+          <div className="coach-banner-head">🧑‍🏫 Coach</div>
+          <div className="coach-banner-text">
+            La mejor era <b>{coach.bestSan}</b> (flecha azul). {coach.outcome}
+            {coach.tip ? ` ${coach.tip}` : ""}
+          </div>
         </div>
       )}
 
@@ -254,6 +278,12 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
             ))}
           </div>
           {tip && <div className="tip">💡 {tip}</div>}
+
+          {solutionCoach && (
+            <div className="coach-teach">
+              🧑‍🏫 Solución: <b>{solutionCoach.bestSan}</b> — {solutionCoach.outcome}
+            </div>
+          )}
 
           {(analyzing || analysis || terminal) && (
             <div className="engine">

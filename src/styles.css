@@ -368,6 +368,58 @@ body {
   text-align: center;
   margin-bottom: 10px;
 }
+
+/* ---------- coach ---------- */
+.coach-nudge {
+  background: linear-gradient(120deg, #3a2a5a, #2a2440);
+  color: #d9c9ff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.coach-banner {
+  background: var(--panel);
+  border-left: 4px solid var(--accent-2);
+  border-radius: 10px;
+  padding: 11px 13px;
+  margin: 12px 0 4px;
+  animation: pop 0.2s;
+}
+.coach-banner-head {
+  color: var(--accent-2);
+  font-weight: 800;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.coach-banner-text {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #e7e0f5;
+}
+.coach-banner-text b {
+  color: #fff;
+}
+.coach-teach {
+  background: #2a2440;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #d9c9ff;
+  margin-bottom: 8px;
+}
+.coach-teach b {
+  color: #fff;
+}
+.mode-card.coach {
+  background: linear-gradient(120deg, #8a5cf0, #b07af7);
+  color: #160b2a;
+}
+.mode-card.coach .mc-text small {
+  color: #160b2acc;
+}
 .board-shell {
   /* tablero de borde a borde (full-bleed), como chess.com */
   overflow: hidden;

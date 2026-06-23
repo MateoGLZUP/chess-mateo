@@ -101,12 +101,21 @@ export default function App() {
     return { delta: newR.rating - before, newRating: newR.rating, rankUp };
   }
 
-  function onRushFinish(score: number) {
+  function onRushFinish(score: number, missedIds: string[]) {
     const pr = profileRef.current;
     const isRecord = score > pr.rushBest;
     const best = Math.max(score, pr.rushBest);
     const ds = bumpDailyStreak(pr.dailyStreak);
-    persist({ ...pr, rushBest: best, dailyStreak: { count: ds.count, lastDay: ds.lastDay }, lastPlayed: Date.now() });
+    const next: Profile = {
+      ...pr,
+      rushBest: best,
+      dailyStreak: { count: ds.count, lastDay: ds.lastDay },
+      lastPlayed: Date.now(),
+      srs: pr.srs.slice()
+    };
+    // recuerda los puzzles fallados en Rush para repasarlos después
+    for (const id of missedIds) scheduleSrs(next, id, false, false);
+    persist(next);
     if (isRecord && score > 0) fireCelebration("rush");
     return { best, isRecord: isRecord && score > 0 };
   }
@@ -152,6 +161,7 @@ export default function App() {
     else if (t === "themes") setNav({ s: "themes" });
     else if (t === "review") setNav({ s: "train", mode: "review" });
     else if (t === "daily") setNav({ s: "daily" });
+    else if (t === "coach") setNav({ s: "train", mode: "coach" });
   }
 
   // --- onboarding gate ---
@@ -169,6 +179,7 @@ export default function App() {
 
   function trainTitle(n: Extract<Nav, { s: "train" }>): string {
     if (n.mode === "review") return "🔁 Repasos";
+    if (n.mode === "coach") return "🧑‍🏫 Coach";
     if (n.mode === "theme" && n.theme) return `🎯 ${themeLabel(n.theme)}`;
     return "♟️ Entrenar";
   }

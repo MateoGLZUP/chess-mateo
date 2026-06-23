@@ -6,3 +6,6 @@ dist-ssr
 .vercel
 .env
 .env.*
+
+# Permisos personales de Claude Code (no compartir)
+.claude/settings.local.json

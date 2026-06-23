@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "WebSearch",
+      "WebFetch",
+      "Skill(update-config)",
+      "Skill(fewer-permission-prompts)",
+      "Bash(npm *)",
+      "Bash(node *)",
+      "Bash(npx playwright *)",
+      "Bash(npx vite *)",
+      "Bash(npx tsc *)",
+      "Bash(git *)",
+      "Bash(gh *)",
+      "Bash(curl *)",
+      "Bash(python3 *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(du *)",
+      "Bash(lsof *)",
+      "Bash(pkill -f *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(sips *)",
+      "Bash(qlmanage *)"
+    ]
+  }
+}

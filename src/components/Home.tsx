@@ -1,7 +1,7 @@
 import type { Profile } from "../lib/types";
 import { rankProgress } from "../lib/rank";
 
-export type NavTarget = "train" | "rush" | "themes" | "review" | "daily";
+export type NavTarget = "train" | "rush" | "themes" | "review" | "daily" | "coach";
 
 interface Props {
   profile: Profile;
@@ -43,6 +43,14 @@ export default function Home({ profile, dueCount, dailyDone, onNav }: Props) {
           <span className="mc-text">
             <b>Entrenar</b>
             <small>Puzzles a tu nivel, sin parar</small>
+          </span>
+        </button>
+
+        <button className="mode-card coach" onClick={() => onNav("coach")}>
+          <span className="mc-icon">🧑‍🏫</span>
+          <span className="mc-text">
+            <b>Coach</b>
+            <small>Te guía, corrige tus errores y entrena tu punto débil</small>
           </span>
         </button>
 
