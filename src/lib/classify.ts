@@ -1,4 +1,4 @@
-import { analyze } from "./engine";
+import { analyze, type Analysis } from "./engine";
 
 // Clasificación de jugadas estilo chess.com.
 export type MoveClass = "brilliant" | "best" | "good" | "inaccuracy" | "mistake" | "blunder";
@@ -49,4 +49,33 @@ export async function classifyWrong(fen: string, playerColor: "white" | "black")
   } catch {
     return "mistake";
   }
+}
+
+// ---------- Game Review (estilo chess.com): win% + precisión ----------
+
+/** Centipawns desde el punto de vista del jugador que mueve (mate = ±10000). */
+export function cpFor(a: Analysis, moverWhite: boolean): number {
+  const sign = moverWhite ? 1 : -1;
+  if (a.mate !== undefined) return a.mate * sign > 0 ? 10000 : -10000;
+  return (a.cp ?? 0) * sign;
+}
+
+/** Probabilidad de victoria (0..100) a partir de centipawns (fórmula de lichess). */
+export function winPercent(cp: number): number {
+  return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
+}
+
+/** Precisión (0..100) de una jugada según el win% perdido (fórmula de lichess). */
+export function moveAccuracy(winPercentLoss: number): number {
+  return Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * winPercentLoss) - 3.1669));
+}
+
+/** Clasifica una jugada por win% perdido (wpl) y si fue la mejor del motor. */
+export function classifyByLoss(wpl: number, isBest: boolean, isSac = false): MoveClass {
+  if (isBest) return isSac ? "brilliant" : "best";
+  if (wpl < 2) return "best";
+  if (wpl < 5) return "good";
+  if (wpl < 10) return "inaccuracy";
+  if (wpl < 20) return "mistake";
+  return "blunder";
 }

@@ -222,6 +222,19 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
     setHintLevel((l) => Math.min(2, l + 1));
   }
 
+  // Reintentar: vuelve al inicio del puzzle para rehacer las jugadas.
+  function restartPuzzle() {
+    if (done) return;
+    sessionRef.current = new PuzzleSession(puzzle);
+    setLocked(false);
+    setFlash(null);
+    setCoach(null);
+    setCoachClass(null);
+    setBadge(null);
+    movesPlayedRef.current = 0;
+    bump();
+  }
+
   function revealSolution() {
     if (done) return;
     failedRef.current = true;
@@ -392,6 +405,9 @@ export default function PuzzleScreen({ puzzle, settings, isReview, variant = "no
             <>
               <button className="btn" onClick={useHint} disabled={hintLevel >= 2}>
                 💡 Pista {hintLevel > 0 ? `(${hintLevel}/2)` : ""}
+              </button>
+              <button className="btn" onClick={restartPuzzle} title="Reintentar este puzzle">
+                ↺
               </button>
               <button className="btn ghost" onClick={revealSolution}>
                 Ver solución

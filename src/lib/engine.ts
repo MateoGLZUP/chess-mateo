@@ -17,6 +17,17 @@ let worker: Worker | null = null;
 let initPromise: Promise<void> | null = null;
 let busy = false;
 
+// Cola: serializa todas las peticiones al motor (un solo worker, una a la vez).
+let engineQueue: Promise<unknown> = Promise.resolve();
+function enqueue<T>(task: () => Promise<T>): Promise<T> {
+  const run = engineQueue.then(task, task);
+  engineQueue = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run as Promise<T>;
+}
+
 function getWorker(): Worker {
   if (!worker) {
     worker = new Worker(import.meta.env.BASE_URL + "engine/stockfish.js");
@@ -51,7 +62,11 @@ export function initEngine(): Promise<void> {
   return initPromise;
 }
 
-export async function analyze(fen: string, opts: { movetime?: number; depth?: number } = {}): Promise<Analysis> {
+export function analyze(fen: string, opts: { movetime?: number; depth?: number } = {}): Promise<Analysis> {
+  return enqueue(() => analyzeImpl(fen, opts));
+}
+
+async function analyzeImpl(fen: string, opts: { movetime?: number; depth?: number } = {}): Promise<Analysis> {
   await initEngine();
   const w = getWorker();
   busy = true;
@@ -118,7 +133,11 @@ export function stopAnalysis(): void {
  * Devuelve la jugada del motor a un nivel de fuerza dado (para jugar partidas).
  * skill: 0 (débil) .. 20 (máximo). Devuelve UCI o null si no hay jugada.
  */
-export async function bestMove(fen: string, opts: { skill?: number; movetime?: number } = {}): Promise<string | null> {
+export function bestMove(fen: string, opts: { skill?: number; movetime?: number } = {}): Promise<string | null> {
+  return enqueue(() => bestMoveImpl(fen, opts));
+}
+
+async function bestMoveImpl(fen: string, opts: { skill?: number; movetime?: number } = {}): Promise<string | null> {
   await initEngine();
   const w = getWorker();
   busy = true;

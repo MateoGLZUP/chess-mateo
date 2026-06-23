@@ -583,6 +583,106 @@ body {
 .mode-card.play .mc-text small {
   color: #06231acc;
 }
+
+/* ---------- revisión del coach (game review) ---------- */
+.review {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.acc-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.acc-cell {
+  flex: 1;
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+}
+.acc-v {
+  font-size: 24px;
+  font-weight: 800;
+}
+.acc-l {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.review-progress {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.eval-graph {
+  width: 100%;
+  height: 48px;
+  display: block;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: #00000030;
+  cursor: pointer;
+}
+.review-coach {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 10px 0;
+}
+.rc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.rc-move {
+  font-weight: 700;
+  font-size: 15px;
+}
+.rc-line {
+  font-size: 14px;
+  line-height: 1.45;
+  color: #d7d7ec;
+}
+.review-coach .btn {
+  margin-top: 10px;
+}
+.nav-row {
+  display: flex;
+  gap: 8px;
+}
+.nav-btn {
+  flex: 1;
+  background: var(--panel-2);
+  border: none;
+  border-radius: 12px;
+  padding: 14px 0;
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform 0.06s;
+}
+.nav-btn:disabled {
+  opacity: 0.35;
+}
+.nav-btn:active {
+  transform: scale(0.96);
+}
+.retry-panel {
+  background: var(--panel);
+  border-left: 4px solid var(--accent-2);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 10px;
+}
+.retry-panel .controls {
+  margin-top: 10px;
+}
 .board-shell {
   /* tablero de borde a borde (full-bleed), como chess.com */
   position: relative;

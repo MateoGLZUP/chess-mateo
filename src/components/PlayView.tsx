@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import Board from "./Board";
+import GameReview from "./GameReview";
 import { bestMove } from "../lib/engine";
 import { play } from "../lib/sound";
 import type { Settings } from "../lib/types";
@@ -41,6 +42,7 @@ export default function PlayView({ settings, onHome }: Props) {
   const [result, setResult] = useState<string | null>(null);
   const [lastMove, setLastMove] = useState<[string, string] | undefined>(undefined);
   const [flip, setFlip] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
     aliveRef.current = true;
@@ -176,6 +178,14 @@ export default function PlayView({ settings, onHome }: Props) {
   }
 
   // ---------- render ----------
+  if (reviewing) {
+    const hist = gameRef.current.history({ verbose: true }) as any[];
+    const moves = hist.map((m) => m.from + m.to + (m.promotion || ""));
+    return (
+      <GameReview movesUci={moves} playerColor={playerColorRef.current} settings={settings} onExit={() => setReviewing(false)} />
+    );
+  }
+
   if (phase === "setup") {
     return (
       <div className="play">
@@ -257,9 +267,16 @@ export default function PlayView({ settings, onHome }: Props) {
         <div className={`play-status ${result ? "over" : ""}`}>{status}</div>
         <div className="controls">
           {result ? (
-            <button className="btn primary big" onClick={() => setPhase("setup")}>
-              Nueva partida
-            </button>
+            <>
+              {gameRef.current.history().length > 0 && (
+                <button className="btn primary" onClick={() => setReviewing(true)}>
+                  🧑‍🏫 Revisar
+                </button>
+              )}
+              <button className="btn ghost" onClick={() => setPhase("setup")}>
+                ↻ Nueva
+              </button>
+            </>
           ) : (
             <>
               <button className="btn" onClick={undo} disabled={thinking}>
