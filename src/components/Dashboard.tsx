@@ -1,5 +1,6 @@
 import type { Profile } from "../lib/types";
 import { themeLabel, isMotif } from "../lib/themes";
+import { rankFor } from "../lib/rank";
 
 interface Props {
   profile: Profile;
@@ -26,9 +27,11 @@ export default function Dashboard({ profile, dueCount, onTrainTheme }: Props) {
   return (
     <div className="dash">
       <div className="rating-hero">
-        <div className="rh-label">Tu rating de táctica</div>
+        <div className="rh-rank">
+          {rankFor(profile.rating.rating).icon} {rankFor(profile.rating.rating).name}
+        </div>
         <div className="rh-value">{profile.rating.rating}</div>
-        <div className="rh-sub">± {profile.rating.rd} de margen de fiabilidad</div>
+        <div className="rh-sub">± {profile.rating.rd} de margen · rating de táctica</div>
         <Spark history={profile.history} />
       </div>
 

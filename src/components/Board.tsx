@@ -3,6 +3,7 @@ import { Chessground } from "chessground";
 import type { Api } from "chessground/api";
 import type { Config } from "chessground/config";
 import type { DrawShape } from "chessground/draw";
+import type { BoardTheme } from "../lib/types";
 
 interface BoardProps {
   fen: string;
@@ -14,6 +15,8 @@ interface BoardProps {
   check?: boolean;
   shapes?: DrawShape[];
   viewOnly?: boolean;
+  boardTheme?: BoardTheme;
+  coordinates?: boolean;
   onMove?: (from: string, to: string) => void;
 }
 
@@ -29,7 +32,7 @@ export default function Board(props: BoardProps) {
       check: props.check,
       lastMove: props.lastMove as any,
       viewOnly: props.viewOnly,
-      coordinates: true,
+      coordinates: props.coordinates ?? true,
       addPieceZIndex: false,
       movable: {
         free: false,
@@ -63,7 +66,7 @@ export default function Board(props: BoardProps) {
   });
 
   return (
-    <div className="cg-board-host">
+    <div className={`cg-board-host board-theme-${props.boardTheme ?? "green"}`}>
       <div ref={el} style={{ width: "100%", height: "100%" }} />
     </div>
   );

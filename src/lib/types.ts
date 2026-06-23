@@ -26,6 +26,15 @@ export interface SrsItem {
   fails: number;
 }
 
+export type BoardTheme = "green" | "brown" | "blue";
+
+export interface Settings {
+  boardTheme: BoardTheme;
+  sounds: boolean;
+  haptics: boolean;
+  coordinates: boolean;
+}
+
 export interface Profile {
   rating: PlayerRating;
   totalAttempts: number;
@@ -37,4 +46,11 @@ export interface Profile {
   history: { t: number; r: number }[];
   srs: SrsItem[];
   lastPlayed: number;
+
+  // onboarding y gamificacion
+  onboarded: boolean;
+  dailyStreak: { count: number; lastDay: string }; // racha de dias seguidos
+  rushBest: number;
+  dailyDoneDate: string; // ultima fecha en que resolvio el puzzle del dia
+  settings: Settings;
 }

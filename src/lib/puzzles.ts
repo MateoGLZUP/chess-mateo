@@ -78,3 +78,31 @@ export function selectNext(
   const choice = win[Math.floor(Math.random() * k)];
   return { puzzle: choice, isReview: false };
 }
+
+/** Devuelve un puzzle de repaso pendiente (SRS) o null si no hay. */
+export function pickDue(profile: Profile): Puzzle | null {
+  if (!mapCache) return null;
+  const now = Date.now();
+  const due = profile.srs.filter((s) => s.dueAt <= now).sort((a, b) => a.dueAt - b.dueAt);
+  for (const s of due) {
+    const p = mapCache.get(s.id);
+    if (p) return p;
+  }
+  return null;
+}
+
+/** Elige un puzzle cercano a un rating objetivo (para Puzzle Rush). */
+export function pickByRating(all: Puzzle[], target: number, exclude: Set<string> = new Set()): Puzzle {
+  let lo = target - 80;
+  let hi = target + 80;
+  let win = all.filter((p) => p.rating >= lo && p.rating <= hi && !exclude.has(p.id));
+  let guard = 0;
+  while (win.length < 5 && guard < 12) {
+    lo -= 100;
+    hi += 100;
+    win = all.filter((p) => p.rating >= lo && p.rating <= hi && !exclude.has(p.id));
+    guard++;
+  }
+  if (win.length === 0) win = all;
+  return win[Math.floor(Math.random() * Math.min(20, win.length))];
+}

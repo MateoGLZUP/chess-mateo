@@ -1,19 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import Board from "./Board";
 import { PuzzleSession } from "../lib/session";
-import type { Puzzle } from "../lib/types";
+import type { Puzzle, Settings } from "../lib/types";
 import { prettyThemes, themeTip } from "../lib/themes";
+import { play, haptic } from "../lib/sound";
+
+export interface ResultInfo {
+  delta: number;
+  newRating: number;
+  rankUp: boolean;
+}
 
 interface Props {
   puzzle: Puzzle;
-  isReview: boolean;
-  onResult: (clean: boolean) => { delta: number; newRating: number };
-  onNext: () => void;
+  settings: Settings;
+  isReview?: boolean;
+  variant?: "normal" | "rush";
+  nextLabel?: string;
+  onResult?: (clean: boolean) => ResultInfo; // modo normal
+  onNext?: () => void; // modo normal
+  onRush?: (solved: boolean) => void; // modo rush: true=resuelto, false=fallo
 }
 
 type Flash = "right" | "wrong" | null;
 
-export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Props) {
+export default function PuzzleScreen({ puzzle, settings, isReview, variant = "normal", nextLabel, onResult, onNext, onRush }: Props) {
   const sessionRef = useRef<PuzzleSession>(new PuzzleSession(puzzle));
   const [, setTick] = useState(0);
   const bump = () => setTick((t) => t + 1);
@@ -22,7 +33,7 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
   const [flash, setFlash] = useState<Flash>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [done, setDone] = useState(false);
-  const [summary, setSummary] = useState<{ clean: boolean; delta: number; newRating: number } | null>(null);
+  const [summary, setSummary] = useState<(ResultInfo & { clean: boolean }) | null>(null);
 
   const failedRef = useRef(false);
   const resultDoneRef = useRef(false);
@@ -35,14 +46,22 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
     };
   }, []);
 
-  const session = sessionRef.current;
+  // Gancho de depuración: expone el puzzle actual para las pruebas (#debug).
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash.includes("debug")) {
+      (window as any).__cmPuzzle = puzzle;
+    }
+  }, [puzzle]);
 
-  function finish() {
+  const session = sessionRef.current;
+  const isRush = variant === "rush";
+
+  function finishNormal() {
     if (resultDoneRef.current) return;
     resultDoneRef.current = true;
     const clean = !failedRef.current && hintLevel < 2;
-    const info = onResult(clean);
-    setSummary({ clean, delta: info.delta, newRating: info.newRating });
+    const info = onResult ? onResult(clean) : { delta: 0, newRating: 0, rankUp: false };
+    setSummary({ ...info, clean });
     setDone(true);
     setLocked(true);
   }
@@ -53,36 +72,50 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
 
     if (r.kind === "wrong") {
       failedRef.current = true;
+      play("wrong", settings);
+      haptic(settings, 30);
       setFlash("wrong");
-      bump(); // el tablero vuelve a la posicion de session.fen
-      window.setTimeout(() => {
-        if (aliveRef.current) setFlash(null);
-      }, 700);
+      bump();
+      if (isRush) {
+        setLocked(true);
+        window.setTimeout(() => {
+          if (aliveRef.current) onRush?.(false);
+        }, 500);
+      } else {
+        window.setTimeout(() => {
+          if (aliveRef.current) setFlash(null);
+        }, 700);
+      }
       return;
     }
 
     if (r.kind === "solved") {
+      play(isRush ? "correct" : "win", settings);
+      haptic(settings, 18);
       setFlash("right");
       bump();
       window.setTimeout(() => {
         if (!aliveRef.current) return;
         setFlash(null);
-        finish();
-      }, 350);
+        if (isRush) onRush?.(true);
+        else finishNormal();
+      }, 320);
       return;
     }
 
-    // correcto, pero el puzzle sigue: el rival responde
+    // correcto pero el puzzle sigue: responde el rival
+    play("correct", settings);
     setFlash("right");
     setLocked(true);
     bump();
     window.setTimeout(() => {
       if (!aliveRef.current) return;
       session.force(r.opponentUci);
+      play("move", settings);
       setLocked(false);
       setFlash(null);
       bump();
-    }, 450);
+    }, 430);
   }
 
   function useHint() {
@@ -99,20 +132,20 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
     const step = () => {
       if (!aliveRef.current) return;
       if (i >= rem.length) {
-        finish();
+        finishNormal();
         return;
       }
       session.force(rem[i]);
+      play("move", settings);
       i++;
       bump();
-      window.setTimeout(step, 650);
+      window.setTimeout(step, 620);
     };
     step();
   }
 
-  // pistas: circulo en la pieza (nivel 1) + flecha a la casilla (nivel 2)
   const shapes: any[] = [];
-  if (!done && !locked && hintLevel > 0) {
+  if (!done && !locked && hintLevel > 0 && !isRush) {
     const exp = session.expected();
     if (exp) {
       shapes.push({ orig: exp.from, brush: "green" });
@@ -126,7 +159,7 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
 
   return (
     <div className="puzzle">
-      {isReview && <div className="review-badge">🔁 Repaso — ya fallaste este, a ver si ahora sí</div>}
+      {isReview && !isRush && <div className="review-badge">🔁 Repaso — ya lo fallaste, a ver si ahora sí</div>}
 
       <div className={`board-shell ${flash ?? ""}`}>
         <Board
@@ -139,6 +172,8 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
           check={session.inCheck}
           shapes={shapes}
           viewOnly={!interactive}
+          boardTheme={settings.boardTheme}
+          coordinates={settings.coordinates}
           onMove={onUserMove}
         />
       </div>
@@ -146,7 +181,9 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
       {!done && (
         <div className={`prompt ${flash ?? ""}`}>
           {flash === "wrong"
-            ? "❌ No es la mejor. Inténtalo otra vez."
+            ? isRush
+              ? "❌ ¡Fallo!"
+              : "❌ No es la mejor. Inténtalo otra vez."
             : flash === "right"
             ? "✅ ¡Bien!"
             : `Juegan las ${moverLabel} — encuentra la mejor jugada`}
@@ -156,6 +193,7 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
       {done && summary && (
         <div className={`summary ${summary.clean ? "good" : "bad"}`}>
           <div className="summary-title">{summary.clean ? "✅ ¡Resuelto!" : "📖 Aquí estaba la solución"}</div>
+          {summary.rankUp && <div className="rankup-note">🎉 ¡Subiste de rango!</div>}
           <div className="rating-line">
             Rating <b>{summary.newRating}</b>{" "}
             <span className={summary.delta >= 0 ? "up" : "down"}>
@@ -171,33 +209,30 @@ export default function PuzzleScreen({ puzzle, isReview, onResult, onNext }: Pro
             ))}
           </div>
           {tip && <div className="tip">💡 {tip}</div>}
-          <a
-            className="gamelink"
-            href={`https://lichess.org/training/${puzzle.id}`}
-            target="_blank"
-            rel="noreferrer"
-          >
+          <a className="gamelink" href={`https://lichess.org/training/${puzzle.id}`} target="_blank" rel="noreferrer">
             Ver análisis en Lichess ↗
           </a>
         </div>
       )}
 
-      <div className="controls">
-        {!done ? (
-          <>
-            <button className="btn" onClick={useHint} disabled={hintLevel >= 2}>
-              💡 Pista {hintLevel > 0 ? `(${hintLevel}/2)` : ""}
+      {!isRush && (
+        <div className="controls">
+          {!done ? (
+            <>
+              <button className="btn" onClick={useHint} disabled={hintLevel >= 2}>
+                💡 Pista {hintLevel > 0 ? `(${hintLevel}/2)` : ""}
+              </button>
+              <button className="btn ghost" onClick={revealSolution}>
+                Ver solución
+              </button>
+            </>
+          ) : (
+            <button className="btn primary big" onClick={onNext}>
+              {nextLabel ?? "Siguiente ▶"}
             </button>
-            <button className="btn ghost" onClick={revealSolution}>
-              Ver solución
-            </button>
-          </>
-        ) : (
-          <button className="btn primary big" onClick={onNext}>
-            Siguiente ▶
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
